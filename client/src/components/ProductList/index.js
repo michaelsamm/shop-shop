@@ -7,6 +7,7 @@ import spinner from '../../assets/spinner.gif';
 
 import { useStoreContext } from '../../utils/GlobalState';
 import { UPDATE_PRODUCTS } from '../../utils/actions';
+import { idbPromise } from '../../utils/helpers';
 
 function ProductList() {
   const [state, dispatch] = useStoreContext();
@@ -21,8 +22,22 @@ function ProductList() {
         type: UPDATE_PRODUCTS,
         products: data.products
       });
+
+      // also save to indexeddb
+      data.products.forEach((product) => {
+        idbPromise('products', 'put', product);
+      });
     }
-  }, [data, dispatch]);
+    else if (!loading) {
+      // if offline get data from products store
+      idbPromise('products', 'get').then((products) => {
+        dispatch({
+          type: UPDATE_PRODUCTS,
+          products: products
+        });
+      });
+    }
+  }, [data, loading, dispatch]);
 
   function filterProducts() {
     if (!currentCategory) {
